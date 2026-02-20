@@ -17,6 +17,16 @@
         }
         h1 {
             color: #333;
+            margin-bottom: 5px;
+        }
+        /* Style for the new subtitle */
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.4;
         }
         #lotteryButton {
             padding: 15px 30px;
@@ -56,6 +66,21 @@
             border-radius: 3px;
             font-size: 14px;
         }
+        #xLink {
+            display: none;
+            margin-top: 15px;
+            color: #1DA1F2;
+            text-decoration: none;
+            font-weight: bold;
+            border: 1px solid #1DA1F2;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+        #xLink:hover {
+            background-color: #1DA1F2;
+            color: white;
+        }
         #lotteryContainer {
             position: relative;
             width: 300px;
@@ -81,12 +106,8 @@
             text-align: center;
             animation: bounce 0.5s ease-in-out infinite alternate;
         }
-        .male-ball {
-            background-color: #2196F3; /* Blue for male */
-        }
-        .woman-ball {
-            background-color: #e91e63; /* Pink for woman */
-        }
+        .male-ball { background-color: #2196F3; }
+        .woman-ball { background-color: #e91e63; }
         @keyframes bounce {
             0% { transform: translate(0, 0); }
             100% { transform: translate(20px, 20px); }
@@ -130,6 +151,8 @@
 </head>
 <body>
     <h1>Many Men Lottery</h1>
+    <p class="subtitle">Alzheimer's disease is a specific brain disease that is the most common cause of dementia</p>
+    
     <button id="lotteryButton" disabled>Loading data...</button>
     <div id="lotteryContainer">
         <div class="lottery-ball male-ball ball1"></div>
@@ -138,32 +161,27 @@
     <div id="loadingIcon"></div>
     <div id="result"></div>
     <img id="profileImage" src="" alt="Winner Profile">
+    <a id="xLink" href="#" target="_blank">View X Profile</a>
     <div id="funnyFacts" class="funny-facts"></div>
 
     <script>
-        // Replace with your actual GitHub Pages URL
         const jsonUrl = 'https://static-conf.vercel.app/go/manymen';
-
         let participants = [];
 
-        // Fetch JSON data from GitHub
         async function loadParticipants() {
             try {
                 const response = await fetch(jsonUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 participants = await response.json();
                 document.getElementById('lotteryButton').disabled = false;
                 document.getElementById('lotteryButton').textContent = 'Draw Winner!';
                 document.getElementById('result').textContent = 'Ready to draw!';
             } catch (error) {
                 console.error('Error loading JSON:', error);
-                document.getElementById('result').textContent = 'Failed to load participant data. Please try again later.';
+                document.getElementById('result').textContent = 'Failed to load participant data.';
             }
         }
 
-        // Initialize by loading JSON data
         loadParticipants();
 
         const button = document.getElementById('lotteryButton');
@@ -172,6 +190,7 @@
         const lotteryContainer = document.getElementById('lotteryContainer');
         const profileImage = document.getElementById('profileImage');
         const loadingIcon = document.getElementById('loadingIcon');
+        const xLink = document.getElementById('xLink');
         const maleBall = document.querySelector('.male-ball');
         const womanBall = document.querySelector('.woman-ball');
 
@@ -189,14 +208,13 @@
         }
 
         button.addEventListener('click', () => {
-            if (participants.length === 0) {
-                resultDiv.textContent = 'No participant data available!';
-                return;
-            }
+            if (participants.length === 0) return;
+
             button.disabled = true;
             resultDiv.textContent = 'Drawing...';
             funnyFactsDiv.innerHTML = '';
             profileImage.style.display = 'none';
+            xLink.style.display = 'none';
             lotteryContainer.style.display = 'block';
             loadingIcon.style.display = 'block';
 
@@ -207,11 +225,19 @@
                 clearInterval(ballAnimation);
                 lotteryContainer.style.display = 'none';
                 loadingIcon.style.display = 'none';
+                
                 const randomIndex = Math.floor(Math.random() * participants.length);
                 const winner = participants[randomIndex];
+                
                 resultDiv.textContent = `The winner is: ${winner.name} (${winner.sex})!`;
                 profileImage.src = winner.image;
                 profileImage.style.display = 'block';
+                
+                if (winner.xLink) {
+                    xLink.href = winner.xLink;
+                    xLink.style.display = 'inline-block';
+                }
+
                 funnyFactsDiv.innerHTML = winner.funnyFacts.map(fact => `<span class="tag">${fact}</span>`).join('');
                 button.disabled = false;
             }, 3000);
