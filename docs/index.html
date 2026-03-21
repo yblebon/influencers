@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; img-src https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src https://static-conf.vercel.app" />
+    content="default-src 'self'; img-src https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src https://static-conf.vercel.app https://raw.githubusercontent.com" />
   <title>Influencer Lottery</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -300,6 +300,7 @@
       color: var(--danger);
       text-align: center;
       display: none;
+      width: 100%;
     }
 
     /* ── Participant count ── */
@@ -361,9 +362,9 @@
     'use strict';
 
     /* ── Config ── */
-    const API_URL  = 'https://static-conf.vercel.app/go/influencers';
+    const API_URL          = 'https://static-conf.vercel.app/go/influencers';
     const DRAW_DURATION_MS = 3000;
-    const MAX_RETRIES = 3;
+    const MAX_RETRIES      = 2;
 
     /* ── SVG icons (safe, no user data injected) ── */
     const SVG = {
@@ -410,6 +411,7 @@
 
     /** Show a recoverable error to the user */
     function showError(msg) {
+      errorBanner.className = 'error-banner error';
       errorBanner.style.display = 'block';
       setText(errorBanner, msg);
     }
@@ -427,39 +429,47 @@
     async function fetchWithRetry(url, retries = MAX_RETRIES) {
       for (let attempt = 1; attempt <= retries; attempt++) {
         try {
-          const res = await fetch(url);
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 6000);
+          const res = await fetch(url, { redirect: 'follow', signal: controller.signal });
+          clearTimeout(timeout);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return await res.json();
         } catch (err) {
           if (attempt === retries) throw err;
-          await new Promise(r => setTimeout(r, 800 * attempt)); // back-off
+          await new Promise(r => setTimeout(r, 800 * attempt));
         }
       }
     }
 
     async function loadParticipants() {
+      hideError();
       setText(statusEl, 'Loading participants…');
+      drawBtn.disabled = true;
+      setText(drawBtn, 'Loading…');
+
       try {
         const data = await fetchWithRetry(API_URL);
-
         if (!Array.isArray(data) || data.length === 0) {
           throw new Error('Participant list is empty or malformed.');
         }
-
         participants = data;
         drawBtn.disabled = false;
         setText(drawBtn, 'Draw a Winner');
         setText(statusEl, 'Ready to draw!');
-        setText(countBadge, '');
-        countBadge.innerHTML = `<span>${participants.length}</span> participants registered`;
-        hideError();
+
+        countBadge.textContent = '';
+        const strong = document.createElement('span');
+        setText(strong, String(participants.length));
+        countBadge.appendChild(strong);
+        countBadge.appendChild(document.createTextNode(' participants registered'));
       } catch (err) {
         console.error('Failed to load participants:', err);
-        setText(statusEl, '');
         showError(`Could not load participants. ${err.message}`);
+        setText(statusEl, '');
         drawBtn.disabled = false;
         setText(drawBtn, 'Retry');
-        drawBtn.onclick = () => { hideError(); loadParticipants(); };
+        drawBtn.onclick = () => { drawBtn.onclick = null; loadParticipants(); };
       }
     }
 
