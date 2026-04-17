@@ -53,11 +53,142 @@
       z-index: 1;
       min-height: 100vh;
       display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      padding: 0;
+      gap: 0;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      background: #0c0c12;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+    }
+    .sidebar-header {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 4px;
+    }
+    .sidebar-sub {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .sidebar-search {
+      width: 100%;
+      margin-top: 14px;
+      padding: 10px 12px;
+      background: #13131a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: var(--transition);
+    }
+    .sidebar-search::placeholder { color: var(--muted); }
+    .sidebar-search:focus { border-color: var(--gold-dim); box-shadow: 0 0 0 3px var(--gold-glow); }
+
+    .sidebar-list {
+      list-style: none;
+      overflow-y: auto;
+      flex: 1;
+      padding: 8px 0;
+    }
+    .sidebar-list::-webkit-scrollbar { width: 6px; }
+    .sidebar-list::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-list::-webkit-scrollbar-thumb { background: #ffffff10; border-radius: 3px; }
+    .sidebar-list::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      border-left: 2px solid transparent;
+    }
+    .sidebar-item:hover { background: #ffffff06; }
+    .sidebar-item.active {
+      background: #ffffff08;
+      border-left-color: var(--gold);
+    }
+    .sidebar-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #1e1e2a;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .sidebar-avatar-fallback {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2a2a35, #13131a);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gold-dim);
+      flex-shrink: 0;
+    }
+    .sidebar-name {
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sidebar-item.active .sidebar-name { color: var(--gold); }
+    .sidebar-empty {
+      padding: 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* ── Main content area ── */
+    .main-content {
+      flex: 1;
+      display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 40px 20px;
-      gap: 0;
+      min-width: 0;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .page { flex-direction: column; }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 40vh;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .main-content { padding: 30px 16px; }
     }
 
     /* ── Header ── */
@@ -316,46 +447,69 @@
 <body>
   <main class="page" role="main">
 
-    <header class="header">
-      <p class="eyebrow">Grand Draw</p>
-      <h1>Influencer Lottery</h1>
-      <div class="rule"></div>
-    </header>
-
-    <div class="card">
-
-      <!-- Error banner -->
-      <div class="error-banner" id="errorBanner" role="alert"></div>
-
-      <!-- Drum animation -->
-      <div class="drum" id="drum" aria-hidden="true">
-        <div class="ball ball-a" id="ballA"></div>
-        <div class="ball ball-b" id="ballB"></div>
+    <!-- Sidebar: Influencer list -->
+    <aside class="sidebar" aria-label="Influencer list">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Influencers</div>
+        <div class="sidebar-sub" id="sidebarSub">Loading…</div>
+        <input
+          type="text"
+          class="sidebar-search"
+          id="sidebarSearch"
+          placeholder="Search influencers…"
+          aria-label="Search influencers"
+          autocomplete="off"
+          disabled
+        />
       </div>
+      <ul class="sidebar-list" id="sidebarList" role="listbox" aria-label="Select an influencer">
+        <li class="sidebar-empty">Loading participants…</li>
+      </ul>
+    </aside>
 
-      <!-- Spinner -->
-      <div class="spinner" id="spinner" aria-hidden="true"></div>
+    <div class="main-content">
 
-      <!-- Status -->
-      <p class="status" id="status" aria-live="polite" aria-atomic="true">Loading participants…</p>
+      <header class="header">
+        <p class="eyebrow">Grand Draw</p>
+        <h1>Influencer Lottery</h1>
+        <div class="rule"></div>
+      </header>
 
-      <!-- Participant count -->
-      <p class="count-badge" id="countBadge" aria-live="polite"></p>
+      <div class="card">
 
-      <!-- Draw button -->
-      <button class="draw-btn" id="drawBtn" disabled aria-label="Draw a winner">
-        Loading…
-      </button>
+        <!-- Error banner -->
+        <div class="error-banner" id="errorBanner" role="alert"></div>
 
-      <!-- Winner panel -->
-      <section class="winner-panel" id="winnerPanel" aria-live="assertive" aria-atomic="true">
-        <p class="winner-label">🏆 Winner</p>
-        <img class="winner-avatar hidden" id="winnerAvatar" src="" alt="" />
-        <h2 class="winner-name" id="winnerName"></h2>
-        <div class="tags" id="winnerTags"></div>
-        <div class="socials" id="winnerSocials"></div>
-      </section>
+        <!-- Drum animation -->
+        <div class="drum" id="drum" aria-hidden="true">
+          <div class="ball ball-a" id="ballA"></div>
+          <div class="ball ball-b" id="ballB"></div>
+        </div>
 
+        <!-- Spinner -->
+        <div class="spinner" id="spinner" aria-hidden="true"></div>
+
+        <!-- Status -->
+        <p class="status" id="status" aria-live="polite" aria-atomic="true">Loading participants…</p>
+
+        <!-- Participant count -->
+        <p class="count-badge" id="countBadge" aria-live="polite"></p>
+
+        <!-- Draw button -->
+        <button class="draw-btn" id="drawBtn" disabled aria-label="Draw a winner">
+          Loading…
+        </button>
+
+        <!-- Winner / Profile panel -->
+        <section class="winner-panel" id="winnerPanel" aria-live="assertive" aria-atomic="true">
+          <p class="winner-label" id="winnerLabel">🏆 Winner</p>
+          <img class="winner-avatar hidden" id="winnerAvatar" src="" alt="" />
+          <h2 class="winner-name" id="winnerName"></h2>
+          <div class="tags" id="winnerTags"></div>
+          <div class="socials" id="winnerSocials"></div>
+        </section>
+
+      </div>
     </div>
   </main>
 
@@ -388,11 +542,15 @@
     const ballB        = document.getElementById('ballB');
     const spinner      = document.getElementById('spinner');
     const winnerPanel  = document.getElementById('winnerPanel');
+    const winnerLabel  = document.getElementById('winnerLabel');
     const winnerAvatar = document.getElementById('winnerAvatar');
     const winnerName   = document.getElementById('winnerName');
     const winnerTags   = document.getElementById('winnerTags');
     const winnerSocials= document.getElementById('winnerSocials');
     const errorBanner  = document.getElementById('errorBanner');
+    const sidebarList  = document.getElementById('sidebarList');
+    const sidebarSub   = document.getElementById('sidebarSub');
+    const sidebarSearch= document.getElementById('sidebarSearch');
 
     /* ── Utilities ── */
 
@@ -464,6 +622,11 @@
         setText(strong, String(participants.length));
         countBadge.appendChild(strong);
         countBadge.appendChild(document.createTextNode(' participants registered'));
+
+        // Populate sidebar
+        setText(sidebarSub, `${participants.length} registered`);
+        sidebarSearch.disabled = false;
+        renderSidebar(participants);
       } catch (err) {
         console.error('Failed to load participants:', err);
         showError(`Could not load participants. ${err.message}`);
@@ -471,8 +634,111 @@
         drawBtn.disabled = false;
         setText(drawBtn, 'Retry');
         drawBtn.onclick = () => { drawBtn.onclick = null; loadParticipants(); };
+
+        setText(sidebarSub, 'Failed to load');
+        sidebarList.innerHTML = '';
+        const li = document.createElement('li');
+        li.className = 'sidebar-empty';
+        setText(li, 'Could not load list.');
+        sidebarList.appendChild(li);
       }
     }
+
+    /* ── Sidebar rendering ── */
+    let selectedIndex = -1;
+
+    function renderSidebar(list) {
+      sidebarList.innerHTML = '';
+
+      if (!list.length) {
+        const li = document.createElement('li');
+        li.className = 'sidebar-empty';
+        setText(li, 'No matches.');
+        sidebarList.appendChild(li);
+        return;
+      }
+
+      list.forEach((p) => {
+        const originalIndex = participants.indexOf(p);
+        const li = document.createElement('li');
+        li.className = 'sidebar-item';
+        li.setAttribute('role', 'option');
+        li.setAttribute('tabindex', '0');
+        li.dataset.index = String(originalIndex);
+        if (originalIndex === selectedIndex) li.classList.add('active');
+
+        // Avatar
+        const name = typeof p.name === 'string' ? p.name : 'Unknown';
+        if (isSafeUrl(p.image)) {
+          const img = document.createElement('img');
+          img.className = 'sidebar-avatar';
+          img.src = p.image;
+          img.alt = '';
+          img.loading = 'lazy';
+          img.onerror = () => {
+            const fb = makeFallbackAvatar(name);
+            img.replaceWith(fb);
+          };
+          li.appendChild(img);
+        } else {
+          li.appendChild(makeFallbackAvatar(name));
+        }
+
+        // Name
+        const nameEl = document.createElement('div');
+        nameEl.className = 'sidebar-name';
+        setText(nameEl, name);
+        li.appendChild(nameEl);
+
+        const handleSelect = () => selectInfluencer(originalIndex);
+        li.addEventListener('click', handleSelect);
+        li.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleSelect();
+          }
+        });
+
+        sidebarList.appendChild(li);
+      });
+    }
+
+    function makeFallbackAvatar(name) {
+      const div = document.createElement('div');
+      div.className = 'sidebar-avatar-fallback';
+      const initial = (name || '?').trim().charAt(0).toUpperCase() || '?';
+      setText(div, initial);
+      return div;
+    }
+
+    function selectInfluencer(index) {
+      const p = participants[index];
+      if (!p) return;
+      selectedIndex = index;
+
+      // Update active state in sidebar
+      sidebarList.querySelectorAll('.sidebar-item').forEach(el => {
+        el.classList.toggle('active', Number(el.dataset.index) === index);
+      });
+
+      // Show profile in the winner panel (reused)
+      setText(winnerLabel, '👤 Profile');
+      renderWinner(p);
+      setText(statusEl, 'Viewing profile');
+    }
+
+    /* ── Sidebar search ── */
+    sidebarSearch.addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      if (!q) {
+        renderSidebar(participants);
+        return;
+      }
+      const filtered = participants.filter(p =>
+        typeof p.name === 'string' && p.name.toLowerCase().includes(q)
+      );
+      renderSidebar(filtered);
+    });
 
     /* ── Ball animation ── */
     function rotateBalls() {
@@ -494,6 +760,10 @@
       setText(drawBtn, 'Drawing…');
       setText(statusEl, 'Selecting a winner…');
       winnerPanel.style.display = 'none';
+      setText(winnerLabel, '🏆 Winner');
+      // Clear sidebar selection during draw
+      selectedIndex = -1;
+      sidebarList.querySelectorAll('.sidebar-item.active').forEach(el => el.classList.remove('active'));
       drum.style.display = 'flex';
       spinner.style.display = 'block';
 
